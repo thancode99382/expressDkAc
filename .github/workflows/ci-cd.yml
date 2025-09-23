@@ -224,44 +224,63 @@ jobs:
     - name: Deploy to production server
       env:
         # These will come from Environment secrets (production environment)
-        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_KEY: ${{ secrets.EC2_KEY }}
         # This comes from Repository secrets (available globally)
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: |
-        echo "🚀 Starting production deployment..."
+        echo "🚀 Starting AWS EC2 deployment..."
         
-        # Example deployment strategies:
-        echo "Choose your deployment method:"
-        echo "1. SSH + Docker Compose"
-        echo "2. Cloud provider (AWS ECS, GCP Cloud Run, Azure Container Instances)"
-        echo "3. Kubernetes cluster"
-        echo "4. Docker Swarm"
+        if [ -n "$EC2_HOST" ] && [ -n "$EC2_KEY" ]; then
+          echo "📡 Deploying to AWS EC2 instance: $EC2_HOST"
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$EC2_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          
+          # Deploy to EC2
+          ssh -i ~/.ssh/ec2_key -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
+            echo "🔄 Updating application on EC2..."
+            
+            # Pull latest Docker image
+            docker pull thancode99382/express-books-crud:latest
+            
+            # Stop and remove old container
+            docker stop books-app 2>/dev/null || true
+            docker rm books-app 2>/dev/null || true
+            
+            # Start new container
+            docker run -d \
+              --name books-app \
+              --restart unless-stopped \
+              -p 80:3000 \
+              --env-file ~/books-app/.env \
+              thancode99382/express-books-crud:latest
+            
+            # Verify deployment
+            sleep 5
+            if docker ps | grep -q books-app; then
+              echo "✅ Application deployed successfully!"
+              curl -f http://localhost/health || echo "⚠️ Health check failed"
+            else
+              echo "❌ Deployment failed!"
+              exit 1
+            fi
+          EOF
+          
+          echo "✅ AWS EC2 deployment completed!"
+        else
+          echo "🔧 AWS EC2 deployment skipped (secrets not configured)"
+          echo "To enable AWS EC2 deployment:"
+          echo "1. Create EC2 instance and RDS database"
+          echo "2. Add EC2_HOST, EC2_USER, EC2_KEY to GitHub environment secrets"
+          echo "3. Push to main branch to trigger deployment"
+        fi
         
-        # SSH + Docker Compose Example (uncomment and configure):
-        # echo "Setting up SSH..."
-        # mkdir -p ~/.ssh
-        # echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
-        # chmod 600 ~/.ssh/deploy_key
-        # 
-        # echo "Deploying to $DEPLOY_HOST..."
-        # ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST << 'EOF'
-        #   cd /path/to/your/app
-        #   docker-compose pull
-        #   docker-compose up -d --remove-orphans
-        #   docker system prune -f
-        # EOF
-        # 
-        # echo "✅ Deployment completed!"
-        
-        # AWS ECS Example:
-        # aws ecs update-service --cluster your-cluster --service your-service --force-new-deployment
-        
-        # For now, just show what would happen
-        echo "📦 Would pull image: $DOCKER_USERNAME/express-books-crud:latest"
-        echo "🔄 Would restart services on: $DEPLOY_HOST"
-        echo "✅ Deployment simulation completed!"
+        echo "📦 Docker image: $DOCKER_USERNAME/express-books-crud:latest"
+        echo "🌐 Your app will be available at: http://$EC2_HOST"
 
   # Notification Job
   notify:

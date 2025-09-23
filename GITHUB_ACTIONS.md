@@ -43,11 +43,11 @@ git push origin v1.0.0
 
 | Secret Name | Description | Required |
 |-------------|-------------|----------|
-| `DEPLOY_HOST` | Production server IP/hostname | ❌ Optional |
-| `DEPLOY_USER` | Production server username | ❌ Optional |
-| `DEPLOY_KEY` | SSH private key for deployment | ❌ Optional |
-| `PROD_DB_HOST` | Production database host | ❌ Optional |
-| `PROD_DB_PASSWORD` | Production database password | ❌ Optional |
+| `EC2_HOST` | AWS EC2 instance IP or domain | ❌ Optional |
+| `EC2_USER` | SSH username (usually 'ubuntu') | ❌ Optional |
+| `EC2_KEY` | SSH private key content | ❌ Optional |
+| `AWS_ACCESS_KEY_ID` | AWS access key for API access | ❌ Optional |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | ❌ Optional |
 
 ### Why Use Environment Secrets for Production?
 - **Security**: Only accessible when deploying to production environment

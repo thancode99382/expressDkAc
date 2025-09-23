@@ -261,6 +261,51 @@ docker run -d -p 3000:3000 --env-file .env your_username/express-books-crud:late
 docker-compose up -d
 ```
 
+### AWS EC2 Deployment (Recommended for Production)
+Deploy to [AWS EC2](https://aws.amazon.com/ec2/) for scalable cloud hosting:
+
+#### **Quick Start**
+```bash
+# 1. Launch EC2 instance (Ubuntu 22.04)
+# 2. SSH into your instance
+ssh -i your-key.pem ubuntu@your-ec2-ip
+
+# 3. Run setup script
+curl -sSL https://raw.githubusercontent.com/thancode99382/expressDkAc/main/scripts/setup-ec2.sh | bash
+
+# 4. Configure environment
+cp ~/books-app/.env.template ~/books-app/.env
+# Edit .env with your RDS database credentials
+
+# 5. Deploy application
+cd ~/books-app && ./deploy.sh
+```
+
+#### **Features**
+- ✅ **Auto-deployment** via GitHub Actions
+- ✅ **Load balancer ready** with Nginx reverse proxy
+- ✅ **SSL support** with Let's Encrypt
+- ✅ **Health monitoring** and auto-restart
+- ✅ **RDS PostgreSQL** integration
+
+See [`AWS_EC2_DEPLOYMENT.md`](AWS_EC2_DEPLOYMENT.md) for detailed setup instructions.
+
+### Render Deployment (Recommended for Production)
+Deploy directly to [Render](https://render.com) for a hassle-free cloud deployment:
+
+1. **Create account** at [render.com](https://render.com)
+2. **Connect GitHub repository**
+3. **Create PostgreSQL database**
+4. **Create web service** with these settings:
+   ```
+   Build Command: npm install
+   Start Command: npm start
+   Health Check: /health
+   ```
+5. **Configure environment variables** in Render dashboard
+
+See [`RENDER_DEPLOYMENT.md`](RENDER_DEPLOYMENT.md) for detailed step-by-step instructions.
+
 See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed workflow documentation.
 
 ## Contributing
