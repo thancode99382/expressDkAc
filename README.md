@@ -321,3 +321,4 @@ See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed wo
 ISC License - see package.json for details
 # expressDkAc
 ✅ SSH connection fixed - triggering deployment test
+✅ EC2 setup completed - testing deployment
