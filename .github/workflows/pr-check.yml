@@ -1,0 +1,84 @@
+name: Pull Request Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-check:
+    name: PR Quality Check
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: books_db_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup test database
+      run: |
+        export PGPASSWORD=admin123
+        psql -h localhost -U postgres -d books_db_test -f database/schema.sql
+
+    - name: Run basic tests
+      env:
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: books_db_test
+        DB_USER: postgres
+        DB_PASSWORD: admin123
+        PORT: 3001
+      run: |
+        echo "Running basic application tests..."
+        # Start app and test basic functionality
+        timeout 30s npm start &
+        sleep 10
+        
+        # Test if app is responding
+        if curl -f http://localhost:3001/ >/dev/null 2>&1; then
+          echo "✅ Application is responding"
+        else
+          echo "❌ Application not responding"
+          exit 1
+        fi
+
+    - name: Docker build test
+      run: |
+        echo "Testing Docker build..."
+        docker build -t test-build .
+        echo "✅ Docker build successful"
+
+    - name: Comment PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '✅ PR checks passed! Ready for review.'
+          })

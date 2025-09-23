@@ -1,5 +1,10 @@
 # Books CRUD Application
 
+[![CI/CD Pipeline](https://github.com/thancode99382/expressDkAc/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/thancode99382/expressDkAc/actions/workflows/ci-cd.yml)
+[![Docker Image](https://img.shields.io/docker/v/your_username/express-books-crud?label=Docker&logo=docker)](https://hub.docker.com/r/your_username/express-books-crud)
+[![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?logo=node.js)](https://nodejs.org/)
+
 A full-stack web application for managing a book collection, built with Express.js, PostgreSQL, and EJS templating engine.
 
 ## Features
@@ -216,15 +221,55 @@ The `books` table includes:
 
 - `npm start` - Start production server
 - `npm run dev` - Start development server with nodemon
-- `npm test` - Run tests (placeholder)
+- `npm test` - Run Jest test suite
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
+
+## 🚀 CI/CD & Deployment
+
+This project includes comprehensive GitHub Actions workflows:
+
+### Available Workflows
+- **CI/CD Pipeline**: Automated testing, building, and deployment
+- **Pull Request Checks**: Quality assurance for PRs
+- **Dependency Updates**: Weekly automated dependency updates
+- **Security Audits**: Regular vulnerability scanning
+- **Release Management**: Automated versioning and Docker image publishing
+
+### Setup Instructions
+1. **Fork/Clone** this repository
+2. **Configure Repository Secrets** in GitHub repository settings:
+   ```
+   DOCKER_USERNAME=your_dockerhub_username
+   DOCKER_PASSWORD=your_dockerhub_token
+   SNYK_TOKEN=your_snyk_token (optional)
+   ```
+3. **Configure Production Environment** (optional, for deployment):
+   - Create "production" environment in repository settings
+   - Add environment secrets for deployment credentials
+   - Set up approval gates and branch restrictions
+4. **Push to main** branch to trigger CI/CD pipeline
+5. **Create tags** (`v1.0.0`) to trigger release workflow
+
+### Docker Deployment
+```bash
+# Pull and run the latest image
+docker pull your_username/express-books-crud:latest
+docker run -d -p 3000:3000 --env-file .env your_username/express-books-crud:latest
+
+# Or use docker-compose
+docker-compose up -d
+```
+
+See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed workflow documentation.
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
