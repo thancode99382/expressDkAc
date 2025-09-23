@@ -47,6 +47,8 @@
       "!**/node_modules/**",
       "!**/test/**",
       "!**/coverage/**"
-    ]
+    ],
+    "forceExit": true,
+    "detectOpenHandles": true
   }
 }
