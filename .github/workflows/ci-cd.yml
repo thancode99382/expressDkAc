@@ -189,7 +189,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ secrets.DOCKER_USERNAME }}/express-books-crud
+        images: dongvandat/express-books-crud
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -315,9 +315,27 @@ jobs:
             DOCKER_CMD="sudo docker"
           fi
           
-          # Pull latest Docker image
-          echo "📦 Pulling latest Docker image..."
-          $DOCKER_CMD pull thancode99382/express-books-crud:latest
+          # Pull latest Docker image or build locally if not available
+          echo "📦 Getting latest application image..."
+          if ! $DOCKER_CMD pull dongvandat/express-books-crud:latest; then
+            echo "🔧 Docker image not found on registry, building locally..."
+            
+            # Clone or update the repository
+            if [ ! -d "expressDkAc" ]; then
+              git clone https://github.com/thancode99382/expressDkAc.git
+            else
+              cd expressDkAc && git pull origin main && cd ..
+            fi
+            
+            # Build the Docker image locally
+            cd expressDkAc
+            $DOCKER_CMD build -t dongvandat/express-books-crud:latest .
+            cd ~/books-app
+            
+            echo "✅ Docker image built locally"
+          else
+            echo "✅ Docker image pulled from registry"
+          fi
           
           # Stop and remove old container
           echo "🛑 Stopping old container..."
@@ -331,7 +349,7 @@ jobs:
             --restart unless-stopped \
             -p 3000:3000 \
             --env-file .env \
-            thancode99382/express-books-crud:latest
+            dongvandat/express-books-crud:latest
           
           # Verify deployment
           echo "🔍 Verifying deployment..."
@@ -362,7 +380,7 @@ jobs:
         DEPLOY_EOF
         
         echo "✅ AWS EC2 deployment completed successfully!"
-        echo "📦 Docker image: $DOCKER_USERNAME/express-books-crud:latest"
+        echo "📦 Docker image: dongvandat/express-books-crud:latest"
         echo "🌐 Your app is available at: http://$EC2_HOST"
         
         # Clean up SSH key
