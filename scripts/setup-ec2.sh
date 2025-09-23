@@ -96,8 +96,22 @@ EOF
 
 # Create deployment script
 print_status "Setting up deployment script..."
-wget -O deploy.sh https://raw.githubusercontent.com/thancode99382/expressDkAc/main/scripts/deploy-aws.sh
-chmod +x deploy.sh
+if [ ! -f deploy.sh ]; then
+    wget -O deploy.sh https://raw.githubusercontent.com/thancode99382/expressDkAc/main/scripts/deploy-aws.sh 2>/dev/null || {
+        echo "Warning: Could not download deploy script. Creating a basic one..."
+        cat > deploy.sh << 'DEPLOY_EOF'
+#!/bin/bash
+echo "🚀 Deploying application..."
+git pull origin main 2>/dev/null || echo "No git repository found"
+docker-compose down 2>/dev/null || true
+docker-compose up -d --build
+echo "✅ Deployment completed!"
+DEPLOY_EOF
+    }
+    chmod +x deploy.sh
+else
+    print_info "Deploy script already exists"
+fi
 
 # Create basic Nginx configuration
 print_status "Creating Nginx configuration..."
