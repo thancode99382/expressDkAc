@@ -169,7 +169,7 @@ SSH connection successful
 # Review Docker logs: docker logs books-app
 ```
 
-### Getting Helpfgfgf
+### Getting Help
 ```bash
 # SSH into your EC2 instance to debug:
 ssh -i your-key.pem ubuntu@your-ec2-ip
