@@ -108,7 +108,7 @@ jobs:
             repo: context.repo.repo,
             title: '🚨 Security Vulnerabilities Detected',
             body: `## Security Audit Failed
-            
+
 Security vulnerabilities were detected in the project dependencies.
 
 ### Action Required:
