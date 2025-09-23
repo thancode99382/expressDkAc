@@ -257,13 +257,26 @@ jobs:
         fi
 
     - name: Deploy to AWS EC2
-      if: ${{ secrets.EC2_HOST != '' && secrets.EC2_USER != '' && secrets.EC2_KEY != '' }}
       env:
         EC2_HOST: ${{ secrets.EC2_HOST }}
         EC2_USER: ${{ secrets.EC2_USER }}
         EC2_KEY: ${{ secrets.EC2_KEY }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: |
+        if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$EC2_KEY" ]; then
+          echo "🔧 AWS EC2 deployment skipped - required secrets not configured"
+          echo ""
+          echo "📋 To enable automatic deployment:"
+          echo "1. Create an AWS EC2 instance"
+          echo "2. Run the setup script on your EC2 instance"
+          echo "3. Configure GitHub Environment secrets:"
+          echo "   - Go to Settings > Environments > production"
+          echo "   - Add EC2_HOST, EC2_USER, EC2_KEY secrets"
+          echo ""
+          echo "📖 Full guide: https://github.com/${{ github.repository }}/blob/main/AWS_EC2_DEPLOYMENT.md"
+          exit 0
+        fi
+        
         echo "🚀 Starting AWS EC2 deployment..."
         echo "📡 Deploying to AWS EC2 instance: $EC2_HOST"
         
@@ -343,24 +356,6 @@ jobs:
         
         # Clean up SSH key
         rm -f ~/.ssh/ec2_key
-
-    - name: Deployment skipped notification
-      if: ${{ secrets.EC2_HOST == '' || secrets.EC2_USER == '' || secrets.EC2_KEY == '' }}
-      run: |
-        echo "🔧 AWS EC2 deployment was skipped because required secrets are not configured."
-        echo ""
-        echo "📋 To enable automatic deployment:"
-        echo "1. Create an AWS EC2 instance"
-        echo "2. Run the setup script on your EC2 instance"
-        echo "3. Configure GitHub Environment secrets:"
-        echo "   - Go to Settings > Environments"
-        echo "   - Create/select 'production' environment"
-        echo "   - Add these secrets:"
-        echo "     * EC2_HOST: Your EC2 public IP or domain"
-        echo "     * EC2_USER: SSH username (usually 'ubuntu')"
-        echo "     * EC2_KEY: Your private SSH key content"
-        echo ""
-        echo "📖 Full deployment guide: https://github.com/${{ github.repository }}/blob/main/AWS_EC2_DEPLOYMENT.md"
 
   # Notification Job
   notify:
