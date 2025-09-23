@@ -257,7 +257,7 @@ jobs:
         fi
 
     - name: Deploy to AWS EC2
-      if: ${{ secrets.EC2_HOST && secrets.EC2_USER && secrets.EC2_KEY }}
+      if: ${{ secrets.EC2_HOST != '' && secrets.EC2_USER != '' && secrets.EC2_KEY != '' }}
       env:
         EC2_HOST: ${{ secrets.EC2_HOST }}
         EC2_USER: ${{ secrets.EC2_USER }}
@@ -345,7 +345,7 @@ jobs:
         rm -f ~/.ssh/ec2_key
 
     - name: Deployment skipped notification
-      if: ${{ !secrets.EC2_HOST || !secrets.EC2_USER || !secrets.EC2_KEY }}
+      if: ${{ secrets.EC2_HOST == '' || secrets.EC2_USER == '' || secrets.EC2_KEY == '' }}
       run: |
         echo "🔧 AWS EC2 deployment was skipped because required secrets are not configured."
         echo ""
