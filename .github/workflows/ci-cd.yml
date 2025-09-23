@@ -337,26 +337,33 @@ jobs:
             echo "✅ Docker image pulled from registry"
           fi
           
-          # Stop and remove old container
-          echo "🛑 Stopping old container..."
-          $DOCKER_CMD stop books-app 2>/dev/null || true
-          $DOCKER_CMD rm books-app 2>/dev/null || true
+          # Stop and remove old containers
+          echo "🛑 Stopping old containers..."
+          $DOCKER_CMD stop books-app postgres-db 2>/dev/null || true
+          $DOCKER_CMD rm books-app postgres-db 2>/dev/null || true
           
-          # Start new container
-          echo "🚀 Starting new container..."
-          $DOCKER_CMD run -d \
-            --name books-app \
-            --restart unless-stopped \
-            -p 3000:3000 \
-            --env-file .env \
-            dongvandat/express-books-crud:latest
+          # Download production docker-compose file
+          echo "� Setting up production environment..."
+          curl -o docker-compose.prod.yml https://raw.githubusercontent.com/thancode99382/expressDkAc/main/docker-compose.prod.yml
+          
+          # Start services with docker-compose
+          echo "🚀 Starting application with database..."
+          if command -v docker-compose >/dev/null 2>&1; then
+            docker-compose -f docker-compose.prod.yml up -d
+          else
+            $DOCKER_CMD compose -f docker-compose.prod.yml up -d
+          fi
           
           # Verify deployment
           echo "🔍 Verifying deployment..."
-          sleep 10
+          sleep 15
           
           if $DOCKER_CMD ps | grep -q books-app; then
-            echo "✅ Container is running!"
+            echo "✅ Application container is running!"
+            
+            if $DOCKER_CMD ps | grep -q books-postgres; then
+              echo "✅ Database container is running!"
+            fi
             
             # Test application health
             if curl -f http://localhost:3000/health 2>/dev/null; then
@@ -368,13 +375,19 @@ jobs:
             fi
             
             # Show container logs (last 10 lines)
-            echo "📋 Recent container logs:"
+            echo "📋 Recent application logs:"
             $DOCKER_CMD logs books-app --tail 10
             
           else
             echo "❌ Container failed to start!"
             echo "📋 Docker logs:"
             $DOCKER_CMD logs books-app 2>/dev/null || echo "No logs available"
+            echo "📋 Docker compose logs:"
+            if command -v docker-compose >/dev/null 2>&1; then
+              docker-compose -f docker-compose.prod.yml logs --tail 20
+            else
+              $DOCKER_CMD compose -f docker-compose.prod.yml logs --tail 20
+            fi
             exit 1
           fi
         DEPLOY_EOF
