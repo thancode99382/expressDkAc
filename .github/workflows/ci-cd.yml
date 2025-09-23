@@ -304,18 +304,29 @@ jobs:
           # Navigate to app directory
           cd ~/books-app || { echo "❌ App directory not found! Run setup script first."; exit 1; }
           
+          # Ensure Docker service is running and user has permissions
+          sudo systemctl start docker 2>/dev/null || true
+          sudo usermod -aG docker $USER 2>/dev/null || true
+          
+          # Use sudo for Docker commands if user not in docker group yet
+          DOCKER_CMD="docker"
+          if ! docker ps >/dev/null 2>&1; then
+            echo "🔧 Using sudo for Docker commands (permission issue detected)"
+            DOCKER_CMD="sudo docker"
+          fi
+          
           # Pull latest Docker image
           echo "📦 Pulling latest Docker image..."
-          docker pull thancode99382/express-books-crud:latest
+          $DOCKER_CMD pull thancode99382/express-books-crud:latest
           
           # Stop and remove old container
           echo "🛑 Stopping old container..."
-          docker stop books-app 2>/dev/null || true
-          docker rm books-app 2>/dev/null || true
+          $DOCKER_CMD stop books-app 2>/dev/null || true
+          $DOCKER_CMD rm books-app 2>/dev/null || true
           
           # Start new container
           echo "🚀 Starting new container..."
-          docker run -d \
+          $DOCKER_CMD run -d \
             --name books-app \
             --restart unless-stopped \
             -p 3000:3000 \
@@ -326,7 +337,7 @@ jobs:
           echo "🔍 Verifying deployment..."
           sleep 10
           
-          if docker ps | grep -q books-app; then
+          if $DOCKER_CMD ps | grep -q books-app; then
             echo "✅ Container is running!"
             
             # Test application health
@@ -340,12 +351,12 @@ jobs:
             
             # Show container logs (last 10 lines)
             echo "📋 Recent container logs:"
-            docker logs books-app --tail 10
+            $DOCKER_CMD logs books-app --tail 10
             
           else
             echo "❌ Container failed to start!"
             echo "📋 Docker logs:"
-            docker logs books-app 2>/dev/null || echo "No logs available"
+            $DOCKER_CMD logs books-app 2>/dev/null || echo "No logs available"
             exit 1
           fi
         DEPLOY_EOF
