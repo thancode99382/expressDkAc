@@ -30,6 +30,15 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(methodOverride('_method')); // Override HTTP methods
 
+
+app.use((req, res, next) => {
+  if (!req.secure) {
+    res.redirect('https://' + req.headers.host + req.url);
+  } else {
+    next();
+  }
+});
+
 // Routes
 app.use('/books', bookRoutes);
 
