@@ -36,8 +36,6 @@ app.use(methodOverride('_method')); // Override HTTP methods
 // Routes
 app.use('/books', bookRoutes);
 
-
-
 // API routes (optional for API usage)
 const apiBookRoutes = express.Router();
 apiBookRoutes.get('/', require('./controllers/bookController').getAllBooks);
