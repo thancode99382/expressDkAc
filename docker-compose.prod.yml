@@ -3,7 +3,7 @@ services:
     build: .
     image: dongvandat/express-books-app:latest
     ports:
-      - "3001:3001"
+      - "80:80"
     env_file:
       - .env.prod
     depends_on:
