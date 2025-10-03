@@ -1,6 +1,25 @@
 const pool = require('./database');
 
+const waitForDatabase = async (maxRetries = 30, delay = 1000) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('✅ Database connection established');
+      return;
+    } catch (error) {
+      console.log(`⏳ Waiting for database... (attempt ${i + 1}/${maxRetries})`);
+      if (i === maxRetries - 1) {
+        throw new Error('Database connection failed after maximum retries');
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
 const createBooksTable = async () => {
+  // Wait for database to be ready
+  await waitForDatabase();
+
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS books (
       id SERIAL PRIMARY KEY,
