@@ -6,11 +6,13 @@ const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 require('dotenv').config();
 
+const { createBooksTable } = require('./config/initDb');
+
 // Import routes
 const bookRoutes = require('./routes/books');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -49,11 +51,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check route
+// Add health check endpoint
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString()
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -75,12 +78,36 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server only if not in test environment
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`API documentation available at http://localhost:${PORT}`);
-  });
-}
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    console.log('🚀 Starting server...');
+    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Try to initialize database, but don't fail if it's not available
+    try {
+      await createBooksTable();
+      console.log('✅ Database initialized successfully');
+    } catch (dbError) {
+      console.warn('⚠️  Database initialization failed, but server will continue:', dbError.message);
+      console.warn('📝 You can still access the server, but database features may not work');
+    }
+    
+    // Start the server only if not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ Server is running on port ${PORT}`);
+        console.log(`📖 Local access: http://localhost:${PORT}`);
+        console.log(`🌐 Network access: http://0.0.0.0:${PORT}`);
+      });
+    }
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer();
 
 module.exports = app;
