@@ -24,20 +24,14 @@ app.set('layout', 'layout');
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet({
+  hsts: false, // Disable HTTP Strict Transport Security
+  contentSecurityPolicy: false // Disable CSP that might enforce HTTPS
+})); // Security headers - configured for HTTP
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(methodOverride('_method')); // Override HTTP methods
-
-
-app.use((req, res, next) => {
-  if (!req.secure) {
-    res.redirect('https://' + req.headers.host + req.url);
-  } else {
-    next();
-  }
-});
 
 // Routes
 app.use('/books', bookRoutes);
@@ -108,6 +102,7 @@ const startServer = async () => {
         console.log(`✅ Server is running on port ${PORT}`);
         console.log(`📖 Local access: http://localhost:${PORT}`);
         console.log(`🌐 Network access: http://0.0.0.0:${PORT}`);
+        console.log(`🔓 Using HTTP (not HTTPS) for development`);
       });
     }
   } catch (error) {
