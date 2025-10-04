@@ -1,31 +1,114 @@
+# ====================================================================
+# GITHUB ACTIONS CI/CD WORKFLOW
+# ====================================================================
+# This workflow automatically deploys your BookVault application
+# when code is pushed to the main branch
+# 
+# WORKFLOW OVERVIEW:
+# 1. Triggers on push to main branch
+# 2. Builds new Docker image with latest code
+# 3. Pushes image to Docker Hub registry
+# 4. Deploys updated application to EC2 server
+# 5. Zero-downtime deployment with docker-compose
+# ====================================================================
+
+# Workflow name displayed in GitHub Actions tab
 name: Deploy to EC2
 
+# ====================================================================
+# TRIGGER CONFIGURATION
+# ====================================================================
+# When should this workflow run?
 on:
   push:
     branches:
-      - main  # or your deployment branch
+      - main  # Trigger on push to main branch (production deployments)
+      # Could add other branches like 'staging' for different environments
 
+# ====================================================================
+# JOBS CONFIGURATION
+# ====================================================================
 jobs:
+  # Main deployment job
   deploy:
+    # ----------------------------------------------------------------
+    # RUNNER CONFIGURATION
+    # ----------------------------------------------------------------
+    # Uses self-hosted runner on your EC2 instance
+    # Benefits: Direct access to server, faster deployment, cost-effective
+    # Alternative: runs-on: ubuntu-latest (GitHub-hosted runner)
     runs-on: [self-hosted, linux]
 
+    # ----------------------------------------------------------------
+    # DEPLOYMENT STEPS
+    # ----------------------------------------------------------------
     steps:
+      # STEP 1: Get the latest code
+      # Downloads your repository code to the runner
+      # Includes your beautiful BookVault UI updates, Dockerfile, etc.
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Official GitHub action for code checkout
 
+      # STEP 2: Authenticate with Docker Hub
+      # Logs into Docker Hub registry to push/pull images
+      # Uses repository secrets for secure authentication
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v2  # Official Docker login action
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          # Secrets stored in GitHub repository settings
+          # Navigate to: Settings > Secrets and variables > Actions
+          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Your Docker Hub username
+          password: ${{ secrets.DOCKERHUB_TOKEN }}     # Docker Hub access token (not password!)
 
+      # STEP 3: Build and Push New Image
+      # Creates new Docker image with latest code and pushes to registry
       - name: Build and push Docker image
         run: |
+          # Build Docker image using Dockerfile in repository root
+          # Tags image as 'latest' for production deployment
+          # Includes all your UI improvements, dependencies, etc.
           docker build -t dongvandat/express-books-app:latest .
+          
+          # Push built image to Docker Hub registry
+          # Makes image available for deployment on any server
+          # Other developers/servers can pull this image
           docker push dongvandat/express-books-app:latest
 
+      # STEP 4: Deploy Updated Application
+      # Pulls latest image and restarts application with zero downtime
       - name: Pull latest Docker image and restart container
         run: |
+          # Pull the newly built image from Docker Hub
+          # Ensures we're using the latest version with all updates
           docker pull dongvandat/express-books-app:latest
+          
+          # Gracefully stop current production containers
+          # Preserves database data and handles active connections
           docker-compose -f docker-compose.prod.yml down
+          
+          # Start updated application in detached mode (-d)
+          # Uses production configuration with new image
+          # Your beautiful BookVault app is now live with latest changes!
           docker-compose -f docker-compose.prod.yml up -d
+
+# ====================================================================
+# WORKFLOW BENEFITS FOR YOUR BOOKVAULT APP:
+# ====================================================================
+# ✅ Automatic deployment when you push code changes
+# ✅ Zero-downtime deployment (brief interruption during restart)
+# ✅ Database data preserved during updates
+# ✅ Rollback capability (previous images available on Docker Hub)
+# ✅ Consistent production environment
+# ✅ Fast deployment using self-hosted runner on EC2
+# 
+# SECURITY FEATURES:
+# ✅ Secrets management for Docker Hub credentials
+# ✅ Self-hosted runner (no external access to your server)
+# ✅ Production environment isolation
+# 
+# TO USE THIS WORKFLOW:
+# 1. Set up self-hosted runner on your EC2 instance
+# 2. Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to repository secrets
+# 3. Push code to main branch
+# 4. Watch your beautiful BookVault app auto-deploy! 🚀
+# ====================================================================
