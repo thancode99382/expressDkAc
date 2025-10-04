@@ -9,10 +9,68 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-dismiss alerts after 5 seconds
     autoHideAlerts();
+    
+    // Initialize card animations
+    initializeCardAnimations();
+    
+    // Initialize smooth scrolling
+    initializeSmoothScrolling();
 });
 
 /**
- * Initialize delete button functionality
+ * Initialize card hover animations and interactions
+ */
+function initializeCardAnimations() {
+    const cards = document.querySelectorAll('.book-card');
+    
+    cards.forEach((card, index) => {
+        // Add staggered animation delay
+        card.style.animationDelay = `${index * 0.1}s`;
+        
+        // Enhanced hover effects
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+        
+        // Add click animation
+        card.addEventListener('mousedown', function() {
+            this.style.transform = 'translateY(-6px) scale(0.98)';
+        });
+        
+        card.addEventListener('mouseup', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+    });
+}
+
+/**
+ * Initialize smooth scrolling for anchor links
+ */
+function initializeSmoothScrolling() {
+    const scrollLinks = document.querySelectorAll('a[href^="#"]');
+    
+    scrollLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+/**
+ * Initialize delete button functionality with enhanced animations
  */
 function initializeDeleteButtons() {
     const deleteButtons = document.querySelectorAll('.delete-btn');
@@ -25,9 +83,17 @@ function initializeDeleteButtons() {
     const bookTitleSpan = document.getElementById('bookTitle');
     
     deleteButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent card click events
+            
             const bookId = this.dataset.bookId;
             const bookTitle = this.dataset.bookTitle;
+            
+            // Add click animation
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
             
             // Update modal content
             if (bookTitleSpan) {
@@ -37,10 +103,23 @@ function initializeDeleteButtons() {
                 deleteForm.action = `/books/${bookId}?_method=DELETE`;
             }
             
-            // Show modal
-            deleteModal.show();
+            // Show modal with slight delay for better UX
+            setTimeout(() => {
+                deleteModal.show();
+            }, 200);
         });
     });
+    
+    // Add loading state to delete form submission
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function() {
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Deleting...';
+            }
+        });
+    }
 }
 
 /**
