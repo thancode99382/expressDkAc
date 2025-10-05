@@ -7,9 +7,11 @@
 # WORKFLOW OVERVIEW:
 # 1. Triggers on push to main branch
 # 2. Builds new Docker image with latest code
-# 3. Pushes image to Docker Hub registry
-# 4. Deploys updated application to EC2 server
-# 5. Zero-downtime deployment with docker-compose
+# 3. Ensures Docker Engine is installed on EC2
+# 4. Ensures Docker Compose is installed on EC2
+# 5. Pushes image to Docker Hub registry
+# 6. Deploys updated application to EC2 server
+# 7. Zero-downtime deployment with docker-compose
 # ====================================================================
 
 # Workflow name displayed in GitHub Actions tab
@@ -59,6 +61,80 @@ jobs:
           # Navigate to: Settings > Secrets and variables > Actions
           username: ${{ secrets.DOCKERHUB_USERNAME }}  # Your Docker Hub username
           password: ${{ secrets.DOCKERHUB_TOKEN }}     # Docker Hub access token (not password!)
+
+      # STEP 2.5: Install Docker (if not already installed)
+      # Ensures Docker Engine is available on the EC2 instance
+      # Required for building, pulling, and running containers
+      - name: Install Docker
+        run: |
+          # Check if Docker is already installed
+          if ! command -v docker &> /dev/null; then
+            echo "Docker not found. Installing Docker Engine..."
+            
+            # Update package index
+            sudo apt-get update
+            
+            # Install packages to allow apt to use a repository over HTTPS
+            sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
+            
+            # Add Docker's official GPG key
+            sudo mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            
+            # Set up the repository
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            
+            # Update package index again
+            sudo apt-get update
+            
+            # Install Docker Engine, containerd, and Docker Compose
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            
+            # Add current user to docker group (to run docker without sudo)
+            sudo usermod -aG docker $USER
+            
+            # Start and enable Docker service
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            
+            # Verify installation
+            sudo docker --version
+            echo "✅ Docker installed successfully!"
+          else
+            echo "✅ Docker already installed:"
+            docker --version
+          fi
+
+      # STEP 2.6: Install Docker Compose (if not already installed)
+      # Ensures Docker Compose is available on the EC2 instance
+      # Required for multi-container application deployment
+      - name: Install Docker Compose
+        run: |
+          # Check if Docker Compose is already installed
+          if ! command -v docker-compose &> /dev/null; then
+            echo "Docker Compose not found. Installing..."
+            
+            # Download latest stable version of Docker Compose
+            # Uses official GitHub releases for security and reliability
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+              -o /usr/local/bin/docker-compose
+            
+            # Make Docker Compose executable
+            sudo chmod +x /usr/local/bin/docker-compose
+            
+            # Verify installation
+            docker-compose --version
+            echo "✅ Docker Compose installed successfully!"
+          else
+            echo "✅ Docker Compose already installed:"
+            docker-compose --version
+          fi
 
       # STEP 3: Build and Push New Image
       # Creates new Docker image with latest code and pushes to registry
