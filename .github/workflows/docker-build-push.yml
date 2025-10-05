@@ -6,12 +6,14 @@
 # 
 # WORKFLOW OVERVIEW:
 # 1. Triggers on push to main branch
-# 2. Builds new Docker image with latest code
+# 2. Checks out latest code from repository
 # 3. Ensures Docker Engine is installed on EC2
 # 4. Ensures Docker Compose is installed on EC2
-# 5. Pushes image to Docker Hub registry
-# 6. Deploys updated application to EC2 server
-# 7. Zero-downtime deployment with docker-compose
+# 5. Authenticates with Docker Hub registry
+# 6. Builds new Docker image with latest code
+# 7. Pushes image to Docker Hub registry
+# 8. Deploys updated application to EC2 server
+# 9. Zero-downtime deployment with docker-compose
 # ====================================================================
 
 # Workflow name displayed in GitHub Actions tab
@@ -51,18 +53,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4  # Official GitHub action for code checkout
 
-      # STEP 2: Authenticate with Docker Hub
-      # Logs into Docker Hub registry to push/pull images
-      # Uses repository secrets for secure authentication
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2  # Official Docker login action
-        with:
-          # Secrets stored in GitHub repository settings
-          # Navigate to: Settings > Secrets and variables > Actions
-          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Your Docker Hub username
-          password: ${{ secrets.DOCKERHUB_TOKEN }}     # Docker Hub access token (not password!)
-
-      # STEP 2.5: Install Docker (if not already installed)
+      # STEP 2: Install Docker (if not already installed)
       # Ensures Docker Engine is available on the EC2 instance
       # Required for building, pulling, and running containers
       - name: Install Docker
@@ -111,7 +102,7 @@ jobs:
             docker --version
           fi
 
-      # STEP 2.6: Install Docker Compose (if not already installed)
+      # STEP 3: Install Docker Compose (if not already installed)
       # Ensures Docker Compose is available on the EC2 instance
       # Required for multi-container application deployment
       - name: Install Docker Compose
@@ -136,7 +127,19 @@ jobs:
             docker-compose --version
           fi
 
-      # STEP 3: Build and Push New Image
+      # STEP 4: Authenticate with Docker Hub
+      # Logs into Docker Hub registry to push/pull images
+      # Uses repository secrets for secure authentication
+      # NOTE: This step runs AFTER Docker installation to ensure docker login command is available
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2  # Official Docker login action
+        with:
+          # Secrets stored in GitHub repository settings
+          # Navigate to: Settings > Secrets and variables > Actions
+          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Your Docker Hub username
+          password: ${{ secrets.DOCKERHUB_TOKEN }}     # Docker Hub access token (not password!)
+
+      # STEP 5: Build and Push New Image
       # Creates new Docker image with latest code and pushes to registry
       - name: Build and push Docker image
         run: |
@@ -150,7 +153,7 @@ jobs:
           # Other developers/servers can pull this image
           docker push dongvandat/express-books-app:latest
 
-      # STEP 4: Deploy Updated Application
+      # STEP 6: Deploy Updated Application
       # Pulls latest image and restarts application with zero downtime
       - name: Pull latest Docker image and restart container
         run: |
