@@ -102,7 +102,19 @@ jobs:
             docker --version
           fi
 
-      # STEP 3: Install Docker Compose (if not already installed)
+      # STEP 2.5: Allow runner to access docker.sock (hotfix)
+      # Ensures the GitHub Actions runner can communicate with Docker daemon
+      # Fixes permission issues with Docker socket access
+      - name: Allow runner to access docker.sock (hotfix)
+        run: |
+          sudo systemctl start docker
+          # Nới quyền socket cho job hiện tại (tác dụng tức thì)
+          sudo chmod 666 /var/run/docker.sock || true
+          # Debug: in ra thông tin user & socket
+          id
+          ls -l /var/run/docker.sock || true
+
+      # STEP 3.5: Install Docker Compose (if not already installed)
       # Ensures Docker Compose is available on the EC2 instance
       # Required for multi-container application deployment
       - name: Install Docker Compose
@@ -126,6 +138,10 @@ jobs:
             echo "✅ Docker Compose already installed:"
             docker-compose --version
           fi
+
+
+
+
 
       # STEP 4: Authenticate with Docker Hub
       # Logs into Docker Hub registry to push/pull images
